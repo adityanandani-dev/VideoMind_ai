@@ -1,0 +1,28 @@
+# ── Secret keys — NEVER commit these ─────────────────────────────────────────
+.env
+
+# ── Python virtual environment ────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Python cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ── Downloaded audio files ────────────────────────────────────────────────────
+downloades/
+
+# ── Local vector database ─────────────────────────────────────────────────────
+vector_db/
+
+# ── Whisper model cache ───────────────────────────────────────────────────────
+.cache/
+
+# ── OS files ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Streamlit local config ────────────────────────────────────────────────────
+.streamlit/secrets.toml
