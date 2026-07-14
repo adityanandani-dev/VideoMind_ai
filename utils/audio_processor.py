@@ -1,14 +1,27 @@
 import yt_dlp
 from pydub import AudioSegment
 import os
+import shutil
 
-# ── FFmpeg path (hardcoded so both yt-dlp and pydub find it) ──────────────────
-FFMPEG_DIR  = r"C:\ffmpeg\bin"
-FFMPEG_EXE  = r"C:\ffmpeg\bin\ffmpeg.exe"
-FFPROBE_EXE = r"C:\ffmpeg\bin\ffprobe.exe"
+# ── FFmpeg path resolution ─────────────────────────────────────────────────────
+# On Streamlit Cloud (Linux): ffmpeg is installed via packages.txt, found on PATH
+# On local Windows: ffmpeg lives at C:\ffmpeg\bin
+def _find_ffmpeg():
+    path = shutil.which("ffmpeg")
+    if path:
+        return os.path.dirname(path)
+    windows_path = r"C:\ffmpeg\bin"
+    if os.path.exists(os.path.join(windows_path, "ffmpeg.exe")):
+        return windows_path
+    return None
 
-AudioSegment.converter = FFMPEG_EXE
-AudioSegment.ffprobe   = FFPROBE_EXE
+FFMPEG_DIR = _find_ffmpeg()
+
+if FFMPEG_DIR:
+    _exe = "ffmpeg.exe" if os.name == "nt" else "ffmpeg"
+    _probe = "ffprobe.exe" if os.name == "nt" else "ffprobe"
+    AudioSegment.converter = os.path.join(FFMPEG_DIR, _exe)
+    AudioSegment.ffprobe   = os.path.join(FFMPEG_DIR, _probe)
 # ──────────────────────────────────────────────────────────────────────────────
 
 DOWNLOAD_DIR = 'downloades'
@@ -20,7 +33,6 @@ def download_youtube_audio(url: str) -> str:
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_path,
-        "ffmpeg_location": FFMPEG_DIR,        # ← yt-dlp finds ffmpeg here
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
@@ -30,6 +42,9 @@ def download_youtube_audio(url: str) -> str:
         ],
         "quiet": True,
     }
+    if FFMPEG_DIR:
+        ydl_opts["ffmpeg_location"] = FFMPEG_DIR
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
         filename = ydl.prepare_filename(info).replace(".webm", ".wav").replace(".m4a", ".wav")
@@ -40,7 +55,7 @@ def convert_to_wav(input_path: str) -> str:
     """Convert any audio/video file to WAV format using pydub."""
     output_path = os.path.splitext(input_path)[0] + "_converted.wav"
     audio = AudioSegment.from_file(input_path)
-    audio = audio.set_channels(1).set_frame_rate(16000)  # 16kHz mono for Whisper
+    audio = audio.set_channels(1).set_frame_rate(16000)
     audio.export(output_path, format="wav")
     return output_path
 

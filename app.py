@@ -1,13 +1,20 @@
 import streamlit as st
 import time
-from dotenv import load_dotenv
+import os
+
+# ── Load secrets safely (works on both local .env and Streamlit Cloud) ────────
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # On Streamlit Cloud, secrets are injected automatically
+# ─────────────────────────────────────────────────────────────────────────────
+
 from utils.audio_processor import process_input
 from core.transcribe import transcribe_all
 from core.summarizer import summarize, generate_title
 from core.extractor import extract_action_items, extract_key_decisions, extract_questions
 from core.rag_engine import build_rag_chain, ask_question
-
-load_dotenv()
 
 # ─── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -430,7 +437,6 @@ if run_btn:
 if st.session_state.result:
     r = st.session_state.result
 
-    # Title banner
     st.markdown(f"""
     <div class="card">
         <div class="card-title">📌 Session Title</div>
@@ -439,7 +445,6 @@ if st.session_state.result:
         </div>
     </div>""", unsafe_allow_html=True)
 
-    # Top row: summary + transcript
     col1, col2 = st.columns([3, 2], gap="medium")
 
     with col1:
@@ -453,7 +458,6 @@ if st.session_state.result:
         with st.expander("📝 Full Transcript", expanded=False):
             st.markdown(f'<div class="transcript-box">{r["transcript"]}</div>', unsafe_allow_html=True)
 
-    # Second row: action items | decisions | questions
     c1, c2, c3 = st.columns(3, gap="medium")
 
     with c1:
@@ -479,10 +483,8 @@ if st.session_state.result:
 
     st.markdown("---")
 
-    # ── RAG Chat ──────────────────────────────────────────────────────────────
     st.markdown('<div style="font-family:\'Syne\',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:1rem">💬 Chat with your Meeting</div>', unsafe_allow_html=True)
 
-    # Chat history display
     if st.session_state.chat_history:
         chat_html = '<div class="chat-container">'
         for msg in st.session_state.chat_history:
@@ -507,7 +509,6 @@ if st.session_state.result:
             <div style="color:var(--text-muted);font-size:0.85rem">Ask anything about your meeting transcript</div>
         </div>""", unsafe_allow_html=True)
 
-    # Chat input
     chat_col1, chat_col2 = st.columns([5, 1], gap="small")
     with chat_col1:
         user_input = st.text_input("Your question", placeholder="What were the main decisions made?", label_visibility="collapsed")
@@ -527,7 +528,6 @@ if st.session_state.result:
             st.rerun()
 
 else:
-    # Empty state
     st.markdown("""
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5rem 2rem;text-align:center">
         <div style="font-size:4rem;margin-bottom:1rem">🎬</div>
